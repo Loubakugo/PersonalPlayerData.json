@@ -517,11 +517,18 @@ Instance20.BackgroundTransparency = 1
 Instance20.Position = UDim2.new(0.5, 0, 0.625, 0)
 Instance20.MaxVisibleGraphemes = -1
 
-Instance29.Position = UDim2.new(0.4000000059604645, 0, 0.5, 0)
-Instance29.MaxVisibleGraphemes = -1
+-- On attend que l'interface soit bien dans le jeu avant de lancer la suite
+repeat task.wait() until game.CoreGui:FindFirstChild("Internal")
 
--- COMMANDE DE CHARGEMENT FINALE (À mettre ici et nulle part ailleurs)
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/MainCode.lua"))()
+-- Chargement du MainCode
+task.spawn(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/MainCode.lua"))()
+    end)
+    if not success then
+        warn("Erreur de chargement du MainCode : " .. tostring(err))
+    end
+end)
 
 local Instance21 = Instance.new("TextLabel", Instance12) --10
 Instance21.LayoutOrder = 0
