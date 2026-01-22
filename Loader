@@ -1,35 +1,9 @@
--- [ LOU HUB - LOADER OFFICIEL ]
-local function getGlobalTable()
-    return typeof(getfenv().getgenv) == "function" and typeof(getfenv().getgenv()) == "table" and getfenv().getgenv() or _G
-end
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Source/Main.lua"))()
 
--- 1. On force l'identité pour Pressure
-getGlobalTable()["GameName"] = "Pressure-Lobby" 
-
--- 2. On charge ton interface violette (Fire-Lib)
-local libUrl = "https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Libraries/Fire-Lib/Library.lua"
-local successLib, libCode = pcall(function() return game:HttpGet(libUrl) end)
-
-if successLib then
-    getgenv()._FIRELIB = loadstring(libCode)()
-else
-    warn("Impossible de charger l'interface violette.")
-    return
-end
-
--- 3. On prépare la fenêtre
-local window = getgenv()._FIRELIB:CreateWindow({
-    Title = "Lou Hub",
-    Theme = "Vape"
+local window = lib:AddWindow({
+    Title = "NullFire - Pressure", -- Le nom exact sur tes photos
+    Theme = "Dark"
 })
 
--- 4. On lance ton MainCode personnalisé
-local mainUrl = "https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/MainCode.lua"
-local successMain, mainFunc = pcall(function() return loadstring(game:HttpGet(mainUrl))() end)
-
-if successMain and type(mainFunc) == "function" then
-    mainFunc(window)
-    print("Lou Hub : Chargement réussi !")
-else
-    warn("Erreur dans le fichier MainCode.lua")
-end
+-- Charge ton MainCode mis à jour
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/MainCode.lua"))()(window)
