@@ -1,140 +1,152 @@
--- Modified by Lou (Version V2 - Pressure Full)
+-- Modified by Lou (Vrai Source Fire Hub - Pressure)
 
 local function getGlobalTable()
     return typeof(getfenv().getgenv) == "function" and typeof(getfenv().getgenv()) == "table" and getfenv().getgenv() or _G
 end
 
-if getGlobalTable().NFWF then
-    return getGlobalTable().NFWF
-end
-
 local lib = getGlobalTable()._FIRELIB
 local plr = game:GetService("Players").LocalPlayer
-local signals
-local notif = {Title = "[ Lou Hub ]", Time = 10, Text = ""}
 
--- Dépendances externes
-local espLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Libraries/ESP/Main.lua", true))()
-
-pcall(function()
-    signals = loadstring(game:HttpGet("https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Libraries/Signals/Main.lua"))()
-end)
-
-local dsc = "https://discord.gg/RPpF74xXk" 
-
-local vals = {
-    ESPActive = false,
-    MonsterESP = false,
-    AutoCollect = false
-}
-
--- [Interface Principale]
 local function mainWindow(window)
-    -- --- PAGE ACCUEIL ---
-    local page = window:AddPage({Title = "Menu Lou", Order = 0})
-    page:AddLabel({Caption = "Auteur : Lou"})
-    
-    page:AddToggle({Caption = "Player ESP", Default = false, Callback = function(b)
-        espLib.ESPValues.PlayerESP = b
-    end})
+    -- --- CRÉATION DES ONGLETS À L'IDENTIQUE ---
+    local Tabs = {
+        Main = window:AddPage({Title = "Main", Order = 1}),
+        Readme = window:AddPage({Title = "! READ ME NOW !", Order = 2}),
+        Bypasses = window:AddPage({Title = "Bypasses", Order = 3}),
+        Interact = window:AddPage({Title = "Interact", Order = 4}),
+        Visual = window:AddPage({Title = "Visual", Order = 5}),
+        Trolling = window:AddPage({Title = "Trolling", Order = 6})
+    }
 
-    page:AddSeparator()
-    page:AddButton({Caption = "Infinite Yield", Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-    end})
-    page:AddButton({Caption = "New Dex (Explorer)", Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
-    end})
-
-    -- --- PAGE SURVIVAL ---
-    local survivalPage = window:AddPage({Title = "Survival", Order = 1})
-    
-    survivalPage:AddButton({Caption = "Anti-Eyefestation", Callback = function()
-        game:GetService("RunService").Stepped:Connect(function()
-            pcall(function()
-                local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-                if PlayerGui:FindFirstChild("MainGui") and PlayerGui.MainGui:FindFirstChild("Panics") then
-                    PlayerGui.MainGui.Panics.Visible = false
+    -- --- SECTION BYPASSES (IMG_6378) ---
+    Tabs.Bypasses:AddToggle({Caption = "No damage", Callback = function(state)
+        if state then
+            getgenv().NoDmg = hookmetamethod(game, "__namecall", function(self, ...)
+                if not checkcaller() and (tostring(self) == "DamageEvent" or tostring(self) == "DrownEvent") and getnamecallmethod() == "FireServer" then
+                    return nil
                 end
+                return getgenv().NoDmg(self, ...)
             end)
-        end)
-    end})
-
-    survivalPage:AddButton({Caption = "Searchlight Bypass", Callback = function()
-        -- Empêche le boss final de détecter le joueur
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == "Searchlight" and v:IsA("RemoteEvent") then
-                hookfunction(v.FireServer, function() return end)
-            end
         end
     end})
 
-    survivalPage:AddButton({Caption = "Infinite Oxygen", Callback = function()
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if plr.Character and plr.Character:FindFirstChild("Oxygen") then
-                plr.Character.Oxygen.Value = 100
-            end
-        end)
-    end})
-
-    -- --- PAGE VISUALS (ESP MONSTRES) ---
-    local visualPage = window:AddPage({Title = "Visuals", Order = 2})
-
-    visualPage:AddButton({Caption = "ESP Monstres (Highlight)", Callback = function()
+    Tabs.Bypasses:AddToggle({Caption = "Auto hide", Callback = function(state)
+        getgenv().AutoHide = state
         task.spawn(function()
-            while task.wait(2) do -- Scan toutes les 2 secondes
+            while getgenv().AutoHide do
                 for _, v in pairs(workspace:GetChildren()) do
-                    if v:IsA("Model") and (v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Base")) then
-                        if v.Name == "Angler" or v.Name == "Pinkie" or v.Name == "Pandemonium" or v.Name == "Froger" then
-                            if not v:FindFirstChild("Highlight") then
-                                local h = Instance.new("Highlight", v)
-                                h.FillColor = Color3.fromRGB(255, 0, 0)
+                    if v:FindFirstChild("MonsterRoot") or v.Name == "Angler" then
+                        local dist = (v.PrimaryPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                        if dist < 200 then
+                            local locker = workspace:FindFirstChild("Locker", true)
+                            if locker and locker:FindFirstChild("ProximityPrompt") then
+                                fireproximityprompt(locker.ProximityPrompt)
                             end
                         end
                     end
                 end
+                task.wait(0.5)
             end
         end)
     end})
 
-    visualPage:AddButton({Caption = "Fullbright", Callback = function()
-        game:GetService("Lighting").Brightness = 2
-        game:GetService("Lighting").ClockTime = 14
-        game:GetService("Lighting").GlobalShadows = false
+    Tabs.Bypasses:AddToggle({Caption = "Anti Searchlights", Callback = function(state)
+        getgenv().AntiSearch = state
+        local old; old = hookmetamethod(game, "__namecall", function(self, ...)
+            if getgenv().AntiSearch and tostring(self) == "SearchlightEvent" and getnamecallmethod() == "FireServer" then return nil end
+            return old(self, ...)
+        end)
     end})
 
-    -- --- PAGE WORLD ---
-    local worldPage = window:AddPage({Title = "World", Order = 3})
+    Tabs.Bypasses:AddToggle({Caption = "Anti Eyefestation", Callback = function(state)
+        getgenv().AntiEye = state
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if getgenv().AntiEye then
+                pcall(function()
+                    plr.PlayerGui.MainGui.Panics.Eyefestation.Visible = false
+                    plr.PlayerGui.MainGui.Panics.Modifier = 0
+                end)
+            end
+        end)
+    end})
 
-    worldPage:AddButton({Caption = "Auto-Collect Items", Callback = function()
-        vals.AutoCollect = true
+    -- --- SECTION INTERACT (IMG_6379) ---
+    Tabs.Interact:AddToggle({Caption = "Auto loot currency", Callback = function(state)
+        getgenv().AutoLoot = state
         task.spawn(function()
-            while vals.AutoCollect do
-                task.wait(0.3)
+            while getgenv().AutoLoot do
                 for _, v in pairs(workspace:GetDescendants()) do
-                    if v:IsA("ProximityPrompt") and (v.Parent.Name == "Gold" or v.Parent.Name == "Battery") then
+                    if v:IsA("ProximityPrompt") and (v.Parent.Name == "GoldPile" or v.Parent.Name == "Battery") then
                         fireproximityprompt(v)
                     end
                 end
+                task.wait(0.1)
             end
         end)
     end})
 
-    worldPage:AddButton({Caption = "Instant Interact", Callback = function()
-        game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
-            prompt.HoldDuration = 0
+    Tabs.Interact:AddToggle({Caption = "Instant proximity prompt interact", Callback = function(state)
+        game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(p)
+            if state then p.HoldDuration = 0 end
         end)
     end})
 
-    -- CRÉDITS
-    page:AddSeparator()
-    page:AddLabel({Caption = "Propriétaire : Lou"})
+    Tabs.Interact:AddToggle({Caption = "Notify monsters", Callback = function(state)
+        getgenv().Notify = state
+        workspace.ChildAdded:Connect(function(c)
+            if getgenv().Notify and (c:FindFirstChild("MonsterRoot") or c.Name == "Angler") then
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fire Hub", Text = "Entity: "..c.Name})
+            end
+        end)
+    end})
+
+    Tabs.Interact:AddButton({Caption = "Bruteforce closest door codelock", Callback = function()
+        local lock = workspace:FindFirstChild("Codelock", true)
+        if lock then
+            for i = 0, 9999 do
+                game:GetService("ReplicatedStorage").Events.UnlockDoor:FireServer(lock, string.format("%04d", i))
+                if i % 20 == 0 then task.wait() end
+                if not lock:Parent then break end
+            end
+        end
+    end})
+
+    -- --- SECTION VISUAL (IMG_6380) ---
+    Tabs.Visual:AddToggle({Caption = "Rainbow ESP", Callback = function(state)
+        getgenv().Rainbow = state
+        task.spawn(function()
+            while getgenv().Rainbow do
+                local c = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("Highlight") then v.FillColor = c end
+                end
+                task.wait()
+            end
+        end)
+    end})
+
+    Tabs.Visual:AddToggle({Caption = "Monster ESP", Callback = function(state)
+        getgenv().MonstESP = state
+        task.spawn(function()
+            while getgenv().MonstESP do
+                for _, v in pairs(workspace:GetChildren()) do
+                    if v:FindFirstChild("MonsterRoot") or v.Name == "Angler" then
+                        if not v:FindFirstChild("Highlight") then Instance.new("Highlight", v) end
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    end})
+
+    Tabs.Visual:AddButton({Caption = "Fullbright", Callback = function()
+        game:GetService("Lighting").Brightness = 2
+        game:GetService("Lighting").ClockTime = 14
+    end})
 end
 
--- [Initialisation]
+-- [ INITIALISATION ]
 local windowFunc = function(window)
-    local tbl = getGlobalTable()
-    if not tbl["GameName"] then tbl["GameName"] = "Pressure-Lobby" end
     task.spawn(mainWindow, window)
 end
 
