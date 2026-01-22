@@ -1,4 +1,4 @@
--- Modified by Lou (Version Pressure Optimisée)
+-- Modified by Lou (Version V2 - Pressure Full)
 
 local function getGlobalTable()
     return typeof(getfenv().getgenv) == "function" and typeof(getfenv().getgenv()) == "table" and getfenv().getgenv() or _G
@@ -20,51 +20,21 @@ pcall(function()
     signals = loadstring(game:HttpGet("https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Libraries/Signals/Main.lua"))()
 end)
 
-local webhook = function() return true end
 local dsc = "https://discord.gg/RPpF74xXk" 
 
-local character
 local vals = {
     ESPActive = false,
-    NFU = {}
+    MonsterESP = false,
+    AutoCollect = false
 }
-
--- [Système ESP Joueurs]
-task.spawn(function()
-    local plrs = game:GetService("Players")
-    local lplr = plrs.LocalPlayer
-    local playerBases = {}
-
-    function character(plr)
-        local char = plr.Character
-        if not char then return end
-        local playerBase = playerBases[plr.Name] or { HighlightEnabled = true, Color = Color3.new(1, 1, 1), Text = "NAME", ESPName = "PlayerESP" }
-        playerBases[plr.Name] = playerBase
-        pcall(espLib.DeapplyESP, char)
-        playerBase.Color = plr.Team and plr.Team.TeamColor.Color or Color3.new(1, 1, 1)
-        playerBase.Text = (vals.NFU[plr.Name] and "<font color=\"rgb(255,0,175)\"><b>[ Hub User ]</b></font>" or "") .. "\n" .. plr.DisplayName
-        pcall(espLib.ApplyESP, char, playerBase)
-    end
-
-    local function player(plr)
-        if plr and plr ~= lplr then
-            if plr.Character then character(plr) end
-            plr.Changed:Connect(function() character(plr) end)
-        end
-    end
-
-    for i,v in plrs:GetPlayers() do player(v) task.wait() end
-    plrs.PlayerAdded:Connect(player)
-end)
 
 -- [Interface Principale]
 local function mainWindow(window)
-    -- PAGE ACCUEIL
+    -- --- PAGE ACCUEIL ---
     local page = window:AddPage({Title = "Menu Lou", Order = 0})
     page:AddLabel({Caption = "Auteur : Lou"})
     
-    page:AddToggle({Caption = "Player ESP", Default = vals.ESPActive, Callback = function(b)
-        vals.ESPActive = b
+    page:AddToggle({Caption = "Player ESP", Default = false, Callback = function(b)
         espLib.ESPValues.PlayerESP = b
     end})
 
@@ -76,7 +46,7 @@ local function mainWindow(window)
         loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
     end})
 
-    -- PAGE SURVIVAL (Nouveautés Pressure)
+    -- --- PAGE SURVIVAL ---
     local survivalPage = window:AddPage({Title = "Survival", Order = 1})
     
     survivalPage:AddButton({Caption = "Anti-Eyefestation", Callback = function()
@@ -90,19 +60,65 @@ local function mainWindow(window)
         end)
     end})
 
+    survivalPage:AddButton({Caption = "Searchlight Bypass", Callback = function()
+        -- Empêche le boss final de détecter le joueur
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "Searchlight" and v:IsA("RemoteEvent") then
+                hookfunction(v.FireServer, function() return end)
+            end
+        end
+    end})
+
     survivalPage:AddButton({Caption = "Infinite Oxygen", Callback = function()
         game:GetService("RunService").RenderStepped:Connect(function()
-            pcall(function()
-                local char = game.Players.LocalPlayer.Character
-                if char and char:FindFirstChild("Oxygen") then
-                    char.Oxygen.Value = 100
-                end
-            end)
+            if plr.Character and plr.Character:FindFirstChild("Oxygen") then
+                plr.Character.Oxygen.Value = 100
+            end
         end)
     end})
 
-    -- PAGE WORLD
-    local worldPage = window:AddPage({Title = "World", Order = 2})
+    -- --- PAGE VISUALS (ESP MONSTRES) ---
+    local visualPage = window:AddPage({Title = "Visuals", Order = 2})
+
+    visualPage:AddButton({Caption = "ESP Monstres (Highlight)", Callback = function()
+        task.spawn(function()
+            while task.wait(2) do -- Scan toutes les 2 secondes
+                for _, v in pairs(workspace:GetChildren()) do
+                    if v:IsA("Model") and (v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Base")) then
+                        if v.Name == "Angler" or v.Name == "Pinkie" or v.Name == "Pandemonium" or v.Name == "Froger" then
+                            if not v:FindFirstChild("Highlight") then
+                                local h = Instance.new("Highlight", v)
+                                h.FillColor = Color3.fromRGB(255, 0, 0)
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end})
+
+    visualPage:AddButton({Caption = "Fullbright", Callback = function()
+        game:GetService("Lighting").Brightness = 2
+        game:GetService("Lighting").ClockTime = 14
+        game:GetService("Lighting").GlobalShadows = false
+    end})
+
+    -- --- PAGE WORLD ---
+    local worldPage = window:AddPage({Title = "World", Order = 3})
+
+    worldPage:AddButton({Caption = "Auto-Collect Items", Callback = function()
+        vals.AutoCollect = true
+        task.spawn(function()
+            while vals.AutoCollect do
+                task.wait(0.3)
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") and (v.Parent.Name == "Gold" or v.Parent.Name == "Battery") then
+                        fireproximityprompt(v)
+                    end
+                end
+            end
+        end)
+    end})
 
     worldPage:AddButton({Caption = "Instant Interact", Callback = function()
         game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
@@ -110,24 +126,15 @@ local function mainWindow(window)
         end)
     end})
 
-    worldPage:AddButton({Caption = "Fullbright (No Dark)", Callback = function()
-        game:GetService("Lighting").Brightness = 2
-        game:GetService("Lighting").ClockTime = 14
-        game:GetService("Lighting").GlobalShadows = false
-    end})
-
-    -- CRÉDITS FINAUX
+    -- CRÉDITS
     page:AddSeparator()
-    page:AddLabel({Caption = "Propriétaire exclusif : Lou"})
-    page:AddButton({Caption = "Copier mon Discord", Callback = function()
-        setclipboard(dsc)
-    end})
+    page:AddLabel({Caption = "Propriétaire : Lou"})
 end
 
 -- [Initialisation]
 local windowFunc = function(window)
     local tbl = getGlobalTable()
-    if not tbl["GameName"] then tbl["GameName"] = "Lou Hub" end
+    if not tbl["GameName"] then tbl["GameName"] = "Pressure-Lobby" end
     task.spawn(mainWindow, window)
 end
 
