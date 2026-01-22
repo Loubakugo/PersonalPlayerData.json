@@ -802,6 +802,17 @@ Instance29.BackgroundTransparency = 1
 Instance29.Position = UDim2.new(0.4000000059604645, 0, 0.5, 0)
 Instance29.MaxVisibleGraphemes = -1
 
+-- [ ACTIVATION LOU HUB - VERSION FINALE ]
+local success, result = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/MainCode.lua"))()
+end)
+
+if success then
+    print("Lou Hub : Chargement du MainCode reussi !")
+else
+    warn("Lou Hub : Erreur lors du chargement du MainCode -> " .. tostring(result))
+end
+
 local Instance30 = Instance.new("TextButton", Instance28) --Close
 Instance30.LayoutOrder = 0
 Instance30.TextWrapped = true
