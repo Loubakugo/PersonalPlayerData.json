@@ -8,7 +8,7 @@ getGlobalTable()["GameName"] = "Pressure"
 
 -- 2. Chargement de l'interface (Fire-Lib)
 -- C'est ce qui crée le menu violet que tu aimes
-local libUrl = "https://raw.githubusercontent.com/InfernusScripts/Null-Fire/main/Core/Source/Main.lua"
+local libUrl = "https://raw.githubusercontent.com/Loubakugo/PersonalPlayerData.json/refs/heads/main/Forloaderscrip"
 local successLib, libCode = pcall(function() return game:HttpGet(libUrl) end)
 
 if successLib then
